@@ -32,14 +32,15 @@ def check_genre(genre_list,string):
         return False
 
 #The users to evaluate
-evaluser_list = [51,196,256,3657,5915,6076,6727,7004,7511,9558]
+evaluser_list = [51,75,100]
 
 #load evaluation data
-ratings_list  = pd.read_csv(r'rating.csv')
-show_list = pd.read_csv(r'anime.csv')
+ratings_list  = pd.read_csv(r'E:\projects\animeRecommender\rating.csv')
+show_list = pd.read_csv(r'E:\projects\animeRecommender\anime.csv')
+show_list = show_list.head(1000)
 
 #Create user list
-userlist = ratings_list['user_id'].drop_duplicates().head(10000).tolist()
+userlist = ratings_list['user_id'].drop_duplicates().head(1000).tolist()
 
 #Merge tables and sort movie list by volume of users that have rated it
 top_list = show_list[['name','anime_id','members']].sort_values('members',ascending= False).drop('members',axis=1)
@@ -125,5 +126,10 @@ for evaluser in evaluser_list:
 
 print('\nShow Reccomendations')
 print(output)
+
+#Get count of each recommended title and print the top 10 most recommended titles based on the users being analyzed
+titleCount = output['Name'].value_counts().head(10)
+print("\nTop 10 Most Recommended:")
+print(titleCount)
 output.to_csv('User_Reccomendations.csv')
 
