@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import pandas as pd
+import recmetrics
+np.seterr(divide='ignore', invalid='ignore')
 
 #Calculates the dot poduct subtracted by row mean
 def matmult (a,amean,b,bmean):
@@ -32,11 +34,12 @@ def check_genre(genre_list,string):
         return False
 
 #The users to evaluate
-evaluser_list = [51,196,256,3657,5915,6076,6727,7004,7511,9558]
+evaluser_list = [51,196,256,365,591,607,672,700,751,955]
 
 #load evaluation data
 ratings_list  = pd.read_csv(r'rating.csv')
 show_list = pd.read_csv(r'anime.csv')
+show_list = show_list.head(5000)
 
 #Create user list
 userlist = ratings_list['user_id'].drop_duplicates().head(10000).tolist()
@@ -88,6 +91,7 @@ for evaluser in evaluser_list:
     
     final_list = pd.DataFrame(columns=['User','Name','Estimated Rating'])
     
+    
     for evalshow in reclist:
         #Calculate the cosine simularity for each row
         a = top_list.loc[evalshow].drop(['rmean','simval'])
@@ -120,10 +124,46 @@ for evaluser in evaluser_list:
             r = s/n
             
         final_list = final_list.append({'User':evaluser,'Name': evalshow,'Estimated Rating':r}, ignore_index = True)
-        
+    
     output = output.append(final_list.sort_values('Estimated Rating',ascending=False).head(5), ignore_index=True)
+
+
 
 print('\nShow Reccomendations')
 print(output)
+
+#Get count of each recommended title and print the top 10 most recommended titles based on the users being analyzed
+titleCount = output['Name'].value_counts().head(10)
+print("\nTop 10 Most Recommended:")
+print(titleCount)
+
+intra_list = {}
+recmov = output['Name'].tolist()
+
+df_atribute = list(intra_list.keys())
+#df_atribute.append('name')
+df_atribute = pd.DataFrame(columns = df_atribute)
+for item in set(recmov):
+    df_atribute = df_atribute.append(pd.Series(name = item))
+
+for item in recmov:
+    show_genre = show_list[show_list['name'] == item]['genre'].values[0].split(', ')[0]
+    
+    df_atribute.at[item,show_genre] = 1
+    
+    if show_genre in intra_list:
+        intra_list[show_genre].append(item)
+    else:
+        intra_list[show_genre] = [item]
+
+df_rat = []
+for item in intra_list.keys():
+    df_rat.append(intra_list[item])
+    
+df_atribute = df_atribute.fillna(0)
+
+recmet = recmetrics.intra_list_similarity(df_rat,df_atribute)
+print ('The intra-list similarity is ' + str(recmet))
+
 output.to_csv('User_Reccomendations.csv')
 

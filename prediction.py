@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import pandas as pd
+from math import sqrt
+from sklearn.metrics import mean_squared_error
+
+np.seterr(divide='ignore', invalid='ignore')
 
 #Calculates the dot poduct subtracted by row mean
 def matmult (a,amean,b,bmean):
@@ -28,7 +32,7 @@ def sim (a,amean,b,bmean):
 #The shows to evaluate estimated values
 evalshow_list = ['Death Note','FLCL','Naruto','Highschool of the Dead','Vampire Knight']
 #The users to evaluate
-evaluser_list = [51,196,256,3657,5915,6076,6727,7004,7511,9558]
+evaluser_list = [51,196,256,365,591,607,672,700,751,955]
 
 #load evaluation data
 ratings_list  = pd.read_csv(r'rating.csv')
@@ -55,7 +59,8 @@ for evalshow in evalshow_list:
             original_rate = top_list.at[evalshow,evaluser]
             top_list.at[evalshow,evaluser] = np.nan
         else:
-            original_rate = "not rated"
+            continue
+
         
         #Calculate the cosine simularity for each row
         a = top_list.loc[evalshow].drop(['rmean','simval'])
@@ -86,11 +91,14 @@ for evalshow in evalshow_list:
             r = 0
         else:
             r = s/n
-            
-        output.append([evaluser,evalshow,r,original_rate])
-        if (not original_rate == "not rated"):
-            top_list.at[evalshow,evaluser] = original_rate
         
+       
+        output.append([evaluser,evalshow,r,original_rate])
+        top_list.at[evalshow,evaluser] = original_rate
+       
+ 
 output = pd.DataFrame(output,columns=['User','Title','Estimated Rating','Actual Rating']) 
+rms = sqrt(mean_squared_error(output['Actual Rating'],output['Estimated Rating']))
 print(output.sort_values(['User','Title']))
+print ('The root mean squeard error (RMSE) is ' + str(rms))
 output.to_csv('Estimated_Ratings_Comparison.csv')
